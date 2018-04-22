@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Interphone - CURIOUS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+    	$(function() {
+    		const ESP = "/";
+    	
+    		const interphoneElement = $("#interphone");
+    	
+    		interphoneElement.click(function() {
+				$.post(ESP + "open", function(state) {
+					refreshHtml(state);
+				}, "json").fail(function() {
+					error();
+				});
+    		});
+    	
+    		function getStatus() {
+    			$.post(ESP + "", function(state) {
+					refreshHtml(state);				  
+				}, "json").fail(function() {
+					error();
+				});
+    		}
+    		
+    		function refreshHtml(state) {
+    			if (state) {
+				  	interphoneElement.removeClass("off");
+				  	interphoneElement.addClass("on");
+			  		interphoneElement.html("Ouvert !");
+			  		interphoneElement.attr("disabled", true);
+				} else {
+				  	interphoneElement.removeClass("on");
+				  	interphoneElement.addClass("off");
+			  		interphoneElement.text("Ouvrir");
+			  		interphoneElement.removeAttr("disabled");
+				}
+    		}
+    		
+    		function error() {
+			  	interphoneElement.removeClass("on");
+			  	interphoneElement.removeClass("off");
+		  		interphoneElement.html("Erreur !");
+		  		interphoneElement.attr("disabled", true);
+    		}
+			
+			getStatus();
+			setInterval(function() { getStatus() }, 1500);
+    	});
+    </script>
+    <style type="text/css">
+        body{
+			text-align:center
+		}
+		.on{
+			background:green!important
+		}
+		.off{
+			background:red!important
+		}
+		#interphone{
+			margin:auto;
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			width:150px;
+			height:150px;
+			border-radius:35%;
+			color:white;
+			font-weight:bold;
+			font-size:20px;
+			background:gray;
+			border: 0;
+		}
+		#interphone:hover:enabled{
+			font-size:25px;
+			cursor:pointer
+		}
+    </style>
+</head>
+
+<body>
+    <h1>Interphone - CURIOUS</h1>
+    
+    <button autofocus id="interphone" type="button"></button>
+</body>
+
+</html>
