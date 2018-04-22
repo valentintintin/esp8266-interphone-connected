@@ -54,13 +54,14 @@
     </script>
     <style type="text/css">
         body{
-			text-align:center
+			text-align:center;
+			margin: auto;
 		}
 		.on{
-			background:green!important
+			background:green!important;
 		}
 		.off{
-			background:red!important
+			background:red!important;
 		}
 		#interphone{
 			margin:auto;
@@ -80,6 +81,12 @@
 			font-size:25px;
 			cursor:pointer
 		}
+		#infos {
+			margin-top: 200px;
+		}
+		#infos a {
+			display: block;
+		}
     </style>
 </head>
 
@@ -87,6 +94,14 @@
     <h1>Interphone - CURIOUS</h1>
     
     <button autofocus id="interphone" type="button"></button>
+    
+    <details id="infos">
+    	<summary>Autres commandes</summary>
+    	<a href="/open">Ouvrir (GET et POST)</a>
+    	<a href="/infos">Memoire + Uptime en JSON (GET)</a>
+    	<a href="/reset">Reset l'ESP (POST)</a>
+    	<!--<a href="/upload">Envoie d'un nouveau programme (POST mais jamais testé)</a>-->
+    </div>
 </body>
 
 </html>

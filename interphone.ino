@@ -22,7 +22,7 @@
 #define TIME_ON 5000
 #define RELAY 2
 
-const char pageHTML[] PROGMEM = {"<!DOCTYPE html><title>Interphone - CURIOUS</title><meta content=\"width=device-width,initial-scale=1\"name=viewport><script crossorigin=anonymous integrity=\"sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=\"src=https://code.jquery.com/jquery-3.3.1.min.js></script><script>$(function() { const ESP = \"\"; const interphoneElement = $(\"#interphone\"); interphoneElement.click(function() { $.post(ESP + \"open\", function(state) { refreshHtml(state); }, \"json\").fail(function() { error(); }); }); function getStatus() { $.post(ESP + \"\", function(state) { refreshHtml(state); }, \"json\").fail(function() { error(); }); } function refreshHtml(state) { if (state) { interphoneElement.removeClass(\"off\"); interphoneElement.addClass(\"on\"); interphoneElement.html(\"Ouvert !\"); interphoneElement.attr(\"disabled\", true); } else { interphoneElement.removeClass(\"on\"); interphoneElement.addClass(\"off\"); interphoneElement.text(\"Ouvrir\"); interphoneElement.removeAttr(\"disabled\"); } } function error() { interphoneElement.removeClass(\"on\"); interphoneElement.removeClass(\"off\"); interphoneElement.html(\"Erreur !\"); interphoneElement.attr(\"disabled\", true); } getStatus(); setInterval(function() { getStatus() }, 1500); });</script><style>body{text-align:center}.on{background:green!important}.off{background:red!important}#interphone{margin:auto;display:flex;align-items:center;justify-content:center;width:150px;height:150px;border-radius:35%;color:#fff;font-weight:700;font-size:20px;background:gray;border:0}#interphone:hover:enabled{font-size:25px;cursor:pointer}</style><h1>Interphone - CURIOUS</h1><button autofocus id=interphone type=button></button>"};
+const char pageHTML[] PROGMEM = {"<!DOCTYPE html><title>Interphone - CURIOUS</title><meta content=\"width=device-width,initial-scale=1\"name=viewport><script crossorigin=anonymous integrity=\"sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=\"src=https://code.jquery.com/jquery-3.3.1.min.js></script><script>$(function() { const ESP = \"/\"; const interphoneElement = $(\"#interphone\"); interphoneElement.click(function() { $.post(ESP + \"open\", function(state) { refreshHtml(state); }, \"json\").fail(function() { error(); }); }); function getStatus() { $.post(ESP + \"\", function(state) { refreshHtml(state); }, \"json\").fail(function() { error(); }); } function refreshHtml(state) { if (state) { interphoneElement.removeClass(\"off\"); interphoneElement.addClass(\"on\"); interphoneElement.html(\"Ouvert !\"); interphoneElement.attr(\"disabled\", true); } else { interphoneElement.removeClass(\"on\"); interphoneElement.addClass(\"off\"); interphoneElement.text(\"Ouvrir\"); interphoneElement.removeAttr(\"disabled\"); } } function error() { interphoneElement.removeClass(\"on\"); interphoneElement.removeClass(\"off\"); interphoneElement.html(\"Erreur !\"); interphoneElement.attr(\"disabled\", true); } getStatus(); setInterval(function() { getStatus() }, 2000); });</script><style>body{text-align:center;margin:auto}.on{background:green!important}.off{background:red!important}#interphone{margin:auto;display:flex;align-items:center;justify-content:center;width:150px;height:150px;border-radius:35%;color:#fff;font-weight:700;font-size:20px;background:gray;border:0}#interphone:hover:enabled{font-size:25px;cursor:pointer}#infos{margin-top:200px}#infos a{display:block}</style><h1>Interphone - CURIOUS</h1><button autofocus id=interphone type=button></button><details id=infos><summary>Autres commandes</summary><a href=/open>Ouvrir (GET et POST)</a> <a href=/infos>Memoire + Uptime en JSON (GET)</a> <a href=/reset>Reset l'ESP (POST)</a>"};
 const char trueStr[] PROGMEM = {"true"};
 const char falseStr[] PROGMEM = {"false"};
 char page[2048] = "";
@@ -36,7 +36,7 @@ Timer timer(TIME_ON);
 
 void setup() { 
   Serial.begin(115200);
-  Serial.println(F("Start, connexion to curious"));
+  Serial.println(F("\nStart, connection to curious"));
 
   #ifdef VOICE
     out = new AudioOutputI2SNoDAC();
@@ -49,28 +49,28 @@ void setup() {
   #ifndef DIRECT_CO
     WiFiManager wifiManager;
     if(!wifiManager.autoConnect("CURIOUS-INTERPHONE")) {
-      Serial.println("No connexion, reset !");
+      Serial.println("No connection, reset !");
       ESP.restart();
     } 
   #else
     WiFi.mode(WIFI_STA);
     WiFi.begin("curieux_wifi", "curious7ruesaintjoseph");
     if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-      Serial.println(F("No connexion curious, try Valentin !"));
+      Serial.println(F("No connection curious, try Valentin !"));
       WiFi.begin ( "Valentin", "0613979414" );
       if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-        Serial.println(F("No connexion, reset !"));
+        Serial.println(F("No connection, reset !"));
         ESP.restart();
       }
     }
   #endif
   Serial.println (WiFi.localIP());
   
-  server.onNotFound(handleRequests);
-  server.on("/open", HTTP_ANY, handleRequestsOpen);
-  server.on("/infos", HTTP_GET, handleRequestsInfos);
-  server.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){ request->send_P(200, mimeHtml, trueStr); ESP.restart(); });
-  server.on("/update", HTTP_POST, endUploadProgram, handleRequestsUploadProgram);
+  server.onNotFound(handleRequest);
+  server.on("/open", HTTP_ANY, handleRequestOpen);
+  server.on("/infos", HTTP_GET, handleRequestInfos);
+  server.on("/reset", HTTP_POST, handleRequestReset);
+  //server.on("/update", HTTP_POST, handleRequestReset, handleRequestUploadProgram);
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   server.begin();
   
@@ -81,16 +81,14 @@ void setup() {
 
 void loop() {
   if (ESP.getFreeHeap() < 1000) {
-    Serial.println(F("No more memery, reset !"));
+    Serial.println(F("No more memory, reset !"));
     ESP.restart();
   }
 
   checkDoor();
-
-  delay(10);
 }
 
-void handleRequests(AsyncWebServerRequest *request) {
+void handleRequest(AsyncWebServerRequest *request) {
   if (request->method() == HTTP_POST) {
     request->send_P(200, mimeJson, mustOpenDoor || isDoorOpen ? trueStr : falseStr);
   } else {
@@ -98,12 +96,12 @@ void handleRequests(AsyncWebServerRequest *request) {
   }
 }
 
-void handleRequestsOpen(AsyncWebServerRequest *request) {
+void handleRequestOpen(AsyncWebServerRequest *request) {
   mustOpenDoor = true;
-  handleRequests(request);
+  handleRequest(request);
 }
 
-void handleRequestsInfos(AsyncWebServerRequest *request) {
+void handleRequestInfos(AsyncWebServerRequest *request) {
   sprintf_P(page, PSTR("{\"mem\":%d,\"uptime\":%lu}"), ESP.getFreeHeap(), millis() / 1000);
   request->send(200, mimeJson, page);
 }
@@ -134,8 +132,8 @@ void checkDoor() {
 bool mustCloseDoor() {
   return timer.hasExpired();
 }
-
-void handleRequestsUploadProgram(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+/*
+void handleRequestUploadProgram(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
   if (!index){
     Serial.println(F("UploadStart"));
     Serial.setDebugOutput(true);
@@ -162,9 +160,10 @@ void handleRequestsUploadProgram(AsyncWebServerRequest *request, String filename
     Serial.setDebugOutput(false);
   }
 }
-
-void endUploadProgram(AsyncWebServerRequest *request) {
+*/
+void handleRequestReset(AsyncWebServerRequest *request) {
     Serial.println(F("Reset"));
     request->send_P(200, mimeJson, Update.hasError() ? falseStr : trueStr);
+    delay(1000);
     ESP.restart();
 }
