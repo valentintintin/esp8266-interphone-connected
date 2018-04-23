@@ -6,17 +6,29 @@
 
 #define DIRECT_CO
 //#define VOICE
+//#define MP3
 
 #ifndef DIRECT_CO
   #include <WiFiManager.h> // Conflict with WebServer
 #endif
 
+
+#if defined(VOICE) || defined(MP3)
+  #include <AudioOutputI2SNoDAC.h>
+  AudioOutputI2SNoDAC *out;
+#endif
 #ifdef VOICE
   #include <ESP8266SAM.h>
-  #include <AudioOutputI2SNoDAC.h>
-
-  AudioOutputI2SNoDAC *out;
+  
   ESP8266SAM *sam = new ESP8266SAM;
+#endif
+#ifdef MP3
+  #include "message.h"
+  #include <AudioFileSourcePROGMEM.h>
+  #include <AudioGeneratorMP3.h>
+  
+  AudioGeneratorWAV *wav;
+  AudioFileSourcePROGMEM *file;
 #endif
 
 #define TIME_ON 5000
@@ -38,9 +50,15 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F("\nStart, connection to curious"));
 
-  #ifdef VOICE
+  #if defined(VOICE) || defined(MP3)
     out = new AudioOutputI2SNoDAC();
     out->begin();
+  #endif
+  #ifdef MP3
+    file = new AudioFileSourcePROGMEM(message, sizeof(message));
+    out = new AudioOutputI2SNoDAC();
+    wav = new AudioGeneratorWAV();
+    wav->begin(file, out);
   #endif
   
   pinMode(RELAY, OUTPUT);
@@ -113,10 +131,19 @@ void checkDoor() {
     mustOpenDoor = false;
     #ifdef VOICE
       sam->SetPhonetic(false);
-      //sam->Say(out, "Groupe Curious. étage trois");
-      sam->SetPhonetic(true);
+      sam->Say(out, "bonjour");
+      delay(500);
+      sam->Say(out, "porte de gauche");
+      delay(500);
+      sam->Say(out, "troixième étage");
+      /*sam->SetPhonetic(true);
       //ɡʁup kyʁju tʁwaksjɛm etaʒ
-      sam->Say(out, "GRUH4PEH KUXRIH3UHS");
+      sam->Say(out, "GRUH4PEH KUXRIH3UHS");*/
+    #endif
+    #ifdef MP3
+      if (wav->isRunning()) {
+        if (!wav->loop()) wav->stop();
+      }
     #endif
     timer.restart();
     digitalWrite(RELAY, HIGH);
