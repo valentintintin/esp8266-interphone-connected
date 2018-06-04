@@ -31,6 +31,7 @@
   AudioFileSourcePROGMEM *file;
 #endif
 
+#define DEBUG
 #define TIME_ON 5000
 #define RELAY 2
 
@@ -52,7 +53,11 @@ AsyncWebServer server(80);
 Timer timer(TIME_ON);
 
 void setup() { 
-  Serial.begin(115200);
+	#ifdef RELAY
+		Serial.begin(115200);
+	#else
+		Serial.begin(9600);
+	#endif
   Serial.println(F("\nStart, connection to curious"));
 
   #if defined(VOICE) || defined(MP3)
