@@ -31,6 +31,11 @@ char mimeJson[] = "application/json";
 bool isDoorOpen = false;
 bool mustOpenDoor = false;
 
+#ifndef RELAY
+	char serialRelayOn[4]   = {0xA0, 0x01, 0x01, 0xA2};
+	char serialRelayOff[4]  = {0xA0, 0x01, 0x00, 0xA1};
+#endif	
+
 AsyncWebServer server(80);
 Timer timer(TIME_ON);
 
@@ -119,14 +124,34 @@ void checkDoor() {
       sam->Say(out, "GRUH4PEH KUXRIH3UHS");
     #endif
     timer.restart();
-    digitalWrite(RELAY, HIGH);
+	openRelay();
   }
   
   if (mustCloseDoor() && isDoorOpen) {
     Serial.println(F("Close"));
     isDoorOpen = false;
-    digitalWrite(RELAY, LOW);
+	closeRelay();
   }
+}
+
+void openRelay() {
+	#ifdef RELAY
+		digitalWrite(RELAY, HIGH);
+	#else
+		for(byte i = 0; i < 4; i++) {
+			Serial.write(serialRelayOn[i]); 
+		}
+	#endif
+}
+
+void closeRelay() {
+	#ifdef RELAY
+		digitalWrite(RELAY, LOW);
+	#else
+		for(byte i = 0; i < 4; i++) {
+			Serial.write(serialRelayOff[i]); 
+		}
+	#endif
 }
 
 bool mustCloseDoor() {
