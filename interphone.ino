@@ -71,8 +71,10 @@ void setup() {
     wav->begin(file, out);
   #endif
   
-  pinMode(RELAY, OUTPUT);
-  digitalWrite(RELAY, LOW);
+  #ifdef RELAY
+    pinMode(RELAY, OUTPUT);
+    closeRelay();
+   #endif
 
   #ifndef DIRECT_CO
     WiFiManager wifiManager;
